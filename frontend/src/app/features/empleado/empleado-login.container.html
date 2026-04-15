@@ -1,0 +1,168 @@
+<main class="shell empleado-login-page" data-cy="empleado-login-page">
+  <header class="hero">
+    <div>
+      <p class="kicker">DSW02 - Portal de Empleados</p>
+      <h1>Acceso Empleado</h1>
+      <p class="subtitle">Inicia sesión con tu correo corporativo y contraseña.</p>
+      <div class="hero-meta">
+        <span class="chip">Acceso personal</span>
+        <span class="chip">Sesion protegida</span>
+      </div>
+    </div>
+  </header>
+
+  <section
+    class="card login-card"
+    [class.with-listados]="state.viewState === 'authenticated'"
+    data-cy="empleado-login-card"
+  >
+    <h2>Iniciar sesión</h2>
+    <p>Usa tus credenciales de empleado para continuar.</p>
+
+    @if (state.viewState === 'authenticated') {
+      <div class="feedback success" data-cy="empleado-login-success">
+        <strong>Sesion iniciada</strong>
+        <span>{{ state.profile?.displayName }} ({{ state.profile?.username }})</span>
+      </div>
+
+      <p class="readonly-note" data-cy="empleado-readonly-note">
+        Tu acceso es de solo lectura. Puedes consultar empleados y departamentos, pero no crear, editar ni eliminar.
+      </p>
+
+      @if (state.loadingListados) {
+        <p class="feedback" data-cy="empleado-listados-loading">Cargando listados de consulta...</p>
+      } @else {
+        <div class="readonly-grid" data-cy="empleado-readonly-grid">
+          <section class="readonly-section" data-cy="empleado-readonly-empleados">
+            <h3>Empleados registrados</h3>
+
+            @if (state.empleados.length === 0) {
+              <p class="empty-state" data-cy="empleado-readonly-empleados-empty">
+                No hay empleados para mostrar.
+              </p>
+            } @else {
+              <ul class="readonly-list">
+                @for (empleado of state.empleados; track empleado.id) {
+                  <li>
+                    <strong>{{ empleado.nombre }}</strong>
+                    <span>{{ empleado.correo }}</span>
+                    <span>Departamento: {{ empleado.departamento || 'Sin asignar' }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            <div class="pager" data-cy="empleado-readonly-empleados-pager">
+              <button
+                type="button"
+                (click)="loadEmpleados(state.empleadosPage - 1)"
+                [disabled]="state.empleadosPage <= 0"
+              >
+                Anterior
+              </button>
+              <span>Pagina {{ state.empleadosPage + 1 }} de {{ state.empleadosTotalPages || 1 }}</span>
+              <button
+                type="button"
+                (click)="loadEmpleados(state.empleadosPage + 1)"
+                [disabled]="state.empleadosPage + 1 >= state.empleadosTotalPages"
+              >
+                Siguiente
+              </button>
+            </div>
+          </section>
+
+          <section class="readonly-section" data-cy="empleado-readonly-departamentos">
+            <h3>Departamentos existentes</h3>
+
+            @if (state.departamentos.length === 0) {
+              <p class="empty-state" data-cy="empleado-readonly-departamentos-empty">
+                No hay departamentos para mostrar.
+              </p>
+            } @else {
+              <ul class="readonly-list">
+                @for (departamento of state.departamentos; track departamento.id) {
+                  <li>
+                    <strong>{{ departamento.nombre }}</strong>
+                    <span>ID: {{ departamento.id }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            <div class="pager" data-cy="empleado-readonly-departamentos-pager">
+              <button
+                type="button"
+                (click)="loadDepartamentos(state.departamentosPage - 1)"
+                [disabled]="state.departamentosPage <= 0"
+              >
+                Anterior
+              </button>
+              <span>Pagina {{ state.departamentosPage + 1 }} de {{ state.departamentosTotalPages || 1 }}</span>
+              <button
+                type="button"
+                (click)="loadDepartamentos(state.departamentosPage + 1)"
+                [disabled]="state.departamentosPage + 1 >= state.departamentosTotalPages"
+              >
+                Siguiente
+              </button>
+            </div>
+          </section>
+        </div>
+      }
+
+      <button type="button" (click)="logout()" data-cy="empleado-logout">
+        Cerrar sesion
+      </button>
+    } @else {
+      <form [formGroup]="loginForm" (ngSubmit)="login()" class="form-grid" data-cy="empleado-login-form">
+        <label>
+          Correo
+          <input
+            type="email"
+            formControlName="correo"
+            placeholder="empleado@empresa.com"
+            data-cy="empleado-correo"
+            autocomplete="username"
+          />
+          @if (loginForm.controls.correo.touched && loginForm.controls.correo.hasError('required')) {
+            <small class="field-error">El correo es obligatorio.</small>
+          }
+          @if (loginForm.controls.correo.touched && loginForm.controls.correo.hasError('email')) {
+            <small class="field-error">Ingresa un correo valido.</small>
+          }
+        </label>
+
+        <label>
+          Contrasena
+          <input
+            type="password"
+            formControlName="password"
+            placeholder="********"
+            data-cy="empleado-password"
+            autocomplete="current-password"
+            (keydown.space)="$event.preventDefault()"
+          />
+          @if (loginForm.controls.password.touched && loginForm.controls.password.hasError('required')) {
+            <small class="field-error">La contrasena es obligatoria.</small>
+          }
+          @if (loginForm.controls.password.touched && loginForm.controls.password.hasError('pattern')) {
+            <small class="field-error">La contrasena no puede contener espacios.</small>
+          }
+        </label>
+
+        <button type="submit" [disabled]="state.viewState === 'loading'" data-cy="empleado-login-submit">
+          @if (state.viewState === 'loading') { Validando... } @else { Entrar }
+        </button>
+      </form>
+    }
+
+    @if (state.viewState === 'error') {
+      <p class="feedback error" data-cy="empleado-login-error">{{ state.errorMessage }}</p>
+    }
+
+    <div class="login-secondary-actions" data-cy="empleado-login-secondary-actions">
+      <p>Si administras catalogos, usa el acceso administrativo.</p>
+      <a routerLink="/" class="employee-access-link" data-cy="go-admin-login">Ir a login admin</a>
+    </div>
+  </section>
+</main>

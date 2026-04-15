@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: empleados-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-empleados_db}
+      POSTGRES_USER: ${DB_USER:-empleados_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-empleados_pass}
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: empleados-app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-empleados_db}
+      DB_USER: ${DB_USER:-empleados_user}
+      DB_PASSWORD: ${DB_PASSWORD:-empleados_pass}
+      APP_BASIC_USER: ${APP_BASIC_USER:-admin}
+      APP_BASIC_PASSWORD: ${APP_BASIC_PASSWORD:-admin123}
+    expose:
+      - "8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: empleados-frontend
+    expose:
+      - "80"
+    depends_on:
+      - app
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: empleados-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - app
+
+volumes:
+  postgres_data:

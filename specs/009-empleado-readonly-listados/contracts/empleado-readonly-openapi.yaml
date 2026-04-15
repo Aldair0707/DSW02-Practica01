@@ -1,0 +1,259 @@
+openapi: 3.0.3
+info:
+  title: Empleado Readonly Listings Contract
+  version: 1.0.0
+  description: >-
+    Contrato de acceso de solo lectura para actor EMPLEADO reutilizando endpoints
+    versionados existentes de empleados y departamentos.
+servers:
+  - url: http://localhost:8080
+security:
+  - basicAuth: []
+paths:
+  /api/v1/empleados:
+    get:
+      tags: [Empleados]
+      summary: Listar empleados para actor autenticado
+      description: >-
+        Para actor EMPLEADO retorna una proyeccion de campos no sensibles.
+        Mantiene paginacion con size por defecto = 5.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+      responses:
+        '200':
+          description: Listado paginado de empleados en modo readonly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpleadoReadOnlyPage'
+        '401':
+          description: Credenciales invalidas o sesion no valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: No autorizado para operar sobre el recurso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Empleados]
+      summary: Crear empleado
+      description: Operacion no permitida para actor EMPLEADO.
+      responses:
+        '403':
+          description: Actor EMPLEADO sin permisos de escritura
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/empleados/{id}:
+    put:
+      tags: [Empleados]
+      summary: Actualizar empleado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '403':
+          description: Actor EMPLEADO sin permisos de escritura
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Empleados]
+      summary: Eliminar empleado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '403':
+          description: Actor EMPLEADO sin permisos de escritura
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/departamentos:
+    get:
+      tags: [Departamentos]
+      summary: Listar departamentos para actor autenticado
+      description: >-
+        Para actor EMPLEADO retorna una proyeccion minima de campos no sensibles.
+        Mantiene paginacion con size por defecto = 5.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            default: 5
+      responses:
+        '200':
+          description: Listado paginado de departamentos en modo readonly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartamentoReadOnlyPage'
+        '401':
+          description: Credenciales invalidas o sesion no valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: No autorizado para operar sobre el recurso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Departamentos]
+      summary: Crear departamento
+      description: Operacion no permitida para actor EMPLEADO.
+      responses:
+        '403':
+          description: Actor EMPLEADO sin permisos de escritura
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/departamentos/{id}:
+    put:
+      tags: [Departamentos]
+      summary: Actualizar departamento
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '403':
+          description: Actor EMPLEADO sin permisos de escritura
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Departamentos]
+      summary: Eliminar departamento
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '403':
+          description: Actor EMPLEADO sin permisos de escritura
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    EmpleadoReadOnlyItem:
+      type: object
+      required: [id, nombre, correo]
+      properties:
+        id:
+          type: string
+          description: Identificador de lectura (mapeado desde clave de dominio)
+        nombre:
+          type: string
+        correo:
+          type: string
+          format: email
+        departamento:
+          type: string
+          nullable: true
+
+    EmpleadoReadOnlyPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmpleadoReadOnlyItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    DepartamentoReadOnlyItem:
+      type: object
+      required: [id, nombre]
+      properties:
+        id:
+          type: string
+          description: Identificador de lectura (mapeado desde clave de dominio)
+        nombre:
+          type: string
+
+    DepartamentoReadOnlyPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/DepartamentoReadOnlyItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [AUTH_INVALIDA, NO_AUTORIZADO]
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

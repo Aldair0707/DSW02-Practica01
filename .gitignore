@@ -1,0 +1,38 @@
+# Java / Spring Boot
+backend/target/
+backend/build/
+backend/.gradle/
+*.class
+*.jar
+
+# Logs
+*.log
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Generic build dirs
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
+# Python cache (tooling)
+__pycache__/
+*.pyc
+
+# Maven wrapper artifacts (optional)
+.mvn/wrapper/maven-wrapper.jar

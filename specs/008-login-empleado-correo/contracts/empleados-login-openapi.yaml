@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Empleados Login by Email Contract
+  version: 1.0.0
+  description: >-
+    Contrato enfocado en autenticacion de actor EMPLEADO por correo+contrasena
+    y perfil autenticado por actor.
+servers:
+  - url: http://localhost:8080
+security:
+  - basicAuth: []
+paths:
+  /api/v1/empleados/auth/me:
+    get:
+      summary: Obtener perfil autenticado
+      description: >-
+        Endpoint versionado para identificar actor autenticado.
+        EMPLEADO autenticado tiene alcance SELF.
+      operationId: obtenerPerfilAutenticado
+      tags: [Autenticacion]
+      responses:
+        '200':
+          description: Perfil autenticado (ADMIN o EMPLEADO)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpleadoAuthProfileResponse'
+              examples:
+                empleadoOk:
+                  summary: Perfil de empleado
+                  value:
+                    actorType: EMPLEADO
+                    username: empleado@empresa.com
+                    displayName: Empleado Demo
+                    permissions: [SELF]
+                    empleado:
+                      clave: EMP-1001
+                      correo: empleado@empresa.com
+                      nombre: Empleado Demo
+                      direccion: Calle Demo 1
+                      telefono: 5551231234
+                      departamentoClave: DEP-1001
+                      activo: true
+                adminOk:
+                  summary: Perfil de admin
+                  value:
+                    actorType: ADMIN
+                    username: admin
+                    displayName: Administrador
+                    permissions: [CRUD_EMPLEADOS, CRUD_DEPARTAMENTOS]
+                    empleado: null
+        '401':
+          description: Credenciales invalidas o cuenta inactiva (respuesta generica)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                authFallida:
+                  value:
+                    code: AUTH_INVALIDA
+                    message: Credenciales invalidas
+                    details: []
+        '403':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    EmpleadoAuthProfileResponse:
+      type: object
+      required: [actorType, username, displayName, permissions]
+      properties:
+        actorType:
+          type: string
+          enum: [ADMIN, EMPLEADO]
+        username:
+          type: string
+        displayName:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        empleado:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/EmpleadoResumen'
+
+    EmpleadoResumen:
+      type: object
+      required: [clave, correo, nombre, direccion, telefono, activo]
+      properties:
+        clave:
+          type: string
+          pattern: '^EMP-[0-9]+$'
+        correo:
+          type: string
+          format: email
+        nombre:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        departamentoClave:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [AUTH_INVALIDA, NO_AUTORIZADO]
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

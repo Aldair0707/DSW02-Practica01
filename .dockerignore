@@ -1,0 +1,30 @@
+# VCS and metadata
+.git/
+.gitignore
+
+# Build outputs
+backend/target/
+backend/build/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log*
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.*
+
+# Docker files
+Dockerfile*
+.dockerignore
+
+# Test artifacts
+coverage/
+node_modules/

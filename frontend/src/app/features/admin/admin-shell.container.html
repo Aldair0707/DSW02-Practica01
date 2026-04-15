@@ -1,0 +1,322 @@
+<main class="shell">
+  <header class="hero">
+    <div>
+      <p class="kicker">DSW02 - Frontend Administrativo</p>
+      <h1>Panel de Empleados y Departamentos</h1>
+      
+      <div class="hero-meta">
+      </div>
+    </div>
+  </header>
+
+  @if (message) {
+    <section class="feedback success" aria-live="polite">{{ message }}</section>
+  }
+
+  @if (errorMessage) {
+    <section class="feedback error" aria-live="assertive" data-cy="global-error">{{ errorMessage }}</section>
+  }
+
+  @if (!isAuthenticated) {
+    <section class="card login-card" data-cy="login-card">
+      <h2>Iniciar sesión</h2>
+      <p>Solo el usuario admin puede acceder a esta pantalla.</p>
+
+      <form [formGroup]="authForm" (ngSubmit)="login()" class="form-grid" data-cy="login-form">
+        <label>
+          Usuario
+          <input
+            type="text"
+            formControlName="username"
+            data-cy="login-username"
+            autocomplete="username"
+            (keydown.space)="$event.preventDefault()"
+          />
+          @if (authForm.controls.username.touched && authForm.controls.username.hasError('required')) {
+            <small class="field-error">El usuario es obligatorio.</small>
+          }
+          @if (authForm.controls.username.touched && authForm.controls.username.hasError('pattern')) {
+            <small class="field-error">El usuario no puede contener espacios.</small>
+          }
+        </label>
+
+        <label>
+          Contraseña
+          <input
+            type="password"
+            formControlName="password"
+            data-cy="login-password"
+            autocomplete="current-password"
+            (keydown.space)="$event.preventDefault()"
+          />
+          @if (authForm.controls.password.touched && authForm.controls.password.hasError('required')) {
+            <small class="field-error">La contrasena es obligatoria.</small>
+          }
+          @if (authForm.controls.password.touched && authForm.controls.password.hasError('pattern')) {
+            <small class="field-error">La contrasena no puede contener espacios.</small>
+          }
+        </label>
+
+        <button type="submit" [disabled]="authForm.invalid || loadingAuth" data-cy="login-submit">
+          @if (loadingAuth) { Validando... } @else { Entrar }
+        </button>
+      </form>
+
+      <div class="login-secondary-actions" data-cy="login-secondary-actions">
+        <p>Tambien puedes acceder con tu cuenta de empleado.</p>
+        <a routerLink="/empleado/login" class="employee-access-link" data-cy="go-empleado-login">
+          Ir a login de empleado
+        </a>
+      </div>
+    </section>
+  } @else {
+    <section class="toolbar card" data-cy="admin-toolbar">
+      <div>
+        <h2>{{ perfil?.displayName }}</h2>
+        <p>
+          {{ perfil?.username }} - {{ perfil?.actorType }}
+        </p>
+      </div>
+
+      <div class="toolbar-actions" data-cy="toolbar-actions">
+        <button
+          type="button"
+          (click)="switchToEmpleados()"
+          [class.active]="view === 'empleados'"
+          data-cy="nav-empleados"
+        >
+          Empleados
+        </button>
+        <button
+          type="button"
+          (click)="switchToDepartamentos()"
+          [class.active]="view === 'departamentos'"
+          data-cy="nav-departamentos"
+        >
+          Departamentos
+        </button>
+        <button type="button" class="ghost" (click)="logout()" data-cy="logout-btn">Cerrar sesion</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <article class="card" [class.hidden]="view !== 'empleados'" data-cy="empleados-section">
+        <h3>
+          @if (isEditingEmpleado) {
+            Editar empleado {{ empleadoEditingClave }}
+          } @else {
+            Nuevo empleado
+          }
+        </h3>
+
+        <form [formGroup]="empleadoForm" (ngSubmit)="submitEmpleado()" class="form-grid">
+          <label>
+            Nombre
+            <input type="text" formControlName="nombre" />
+            @if (empleadoForm.controls.nombre.touched && empleadoForm.controls.nombre.hasError('pattern')) {
+              <small class="field-error">El nombre solo admite letras y espacios.</small>
+            }
+          </label>
+
+          <label>
+            Direccion
+            <input type="text" formControlName="direccion" />
+          </label>
+
+          <label>
+            Telefono
+            <input type="text" formControlName="telefono" />
+            @if (empleadoForm.controls.telefono.touched && empleadoForm.controls.telefono.hasError('pattern')) {
+              <small class="field-error">El telefono solo admite numeros.</small>
+            }
+          </label>
+
+          <label>
+            Correo
+            <input type="email" formControlName="correo" [readonly]="isEditingEmpleado" />
+          </label>
+
+          <label>
+            Contrasena
+            <input
+              type="password"
+              formControlName="contrasena"
+              [placeholder]="isEditingEmpleado ? 'Opcional para actualizar' : 'Minimo 8 caracteres'"
+            />
+          </label>
+
+          <label>
+            Departamento
+            <select formControlName="departamentoClave">
+              <option value="">Sin asignar</option>
+              @for (d of departamentos; track d.clave) {
+                <option [value]="d.clave">{{ d.nombre }} ({{ d.clave }})</option>
+              }
+            </select>
+          </label>
+
+          <div class="actions">
+            <button
+              type="submit"
+              [class.add-action]="!isEditingEmpleado"
+              [class.edit-action]="isEditingEmpleado"
+              [disabled]="empleadoForm.invalid || savingEmpleado"
+            >
+              @if (savingEmpleado) { Guardando... } @else if (isEditingEmpleado) { Actualizar } @else { Crear }
+            </button>
+            <button
+              type="button"
+              class="ghost cancel-action"
+              (click)="isEditingEmpleado ? cancelEmpleadoEdition() : startCreateEmpleado()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card" [class.hidden]="view !== 'empleados'" data-cy="empleados-list-card">
+        <div class="list-header" data-cy="empleados-list-header">
+          <h3 data-cy="empleados-list-title">Empleados</h3>
+          <div>
+            <button type="button" (click)="loadEmpleados(empleadosPage - 1)" [disabled]="!canPrev(empleadosPage)">
+              Anterior
+            </button>
+            <button
+              type="button"
+              (click)="loadEmpleados(empleadosPage + 1)"
+              [disabled]="!canNext(empleadosPage, empleadosTotalPages)"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+
+        <p class="muted">Pagina {{ empleadosPage + 1 }} de {{ empleadosTotalPages || 1 }}</p>
+
+        @if (loadingEmpleados) {
+          <p>Cargando empleados...</p>
+        } @else if (empleados.length === 0) {
+          <p>No hay empleados registrados.</p>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Clave</th>
+                  <th>Nombre</th>
+                  <th>Telefono</th>
+                  <th>Departamento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of empleados; track e.clave) {
+                  <tr>
+                    <td>{{ e.clave }}</td>
+                    <td>{{ e.nombre }}</td>
+                    <td>{{ e.telefono }}</td>
+                    <td>{{ e.departamentoClave || 'Sin asignar' }}</td>
+                    <td class="inline-actions">
+                      <button type="button" class="edit-action" (click)="startEditEmpleado(e)">Editar</button>
+                      <button type="button" class="danger" (click)="deleteEmpleado(e.clave)">Eliminar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+
+      <article class="card" [class.hidden]="view !== 'departamentos'" data-cy="departamentos-section">
+        <h3>
+          @if (isEditingDepartamento) {
+            Editar departamento {{ departamentoEditingClave }}
+          } @else {
+            Nuevo departamento
+          }
+        </h3>
+
+        <form [formGroup]="departamentoForm" (ngSubmit)="submitDepartamento()" class="form-grid">
+          <label>
+            Nombre
+            <input type="text" formControlName="nombre" />
+          </label>
+
+          <div class="actions">
+            <button
+              type="submit"
+              [class.add-action]="!isEditingDepartamento"
+              [class.edit-action]="isEditingDepartamento"
+              [disabled]="departamentoForm.invalid || savingDepartamento"
+            >
+              @if (savingDepartamento) { Guardando... } @else if (isEditingDepartamento) { Actualizar } @else { Crear }
+            </button>
+            <button
+              type="button"
+              class="ghost cancel-action"
+              (click)="isEditingDepartamento ? cancelDepartamentoEdition() : startCreateDepartamento()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card" [class.hidden]="view !== 'departamentos'" data-cy="departamentos-list-card">
+        <div class="list-header" data-cy="departamentos-list-header">
+          <h3 data-cy="departamentos-list-title">Departamentos</h3>
+          <div>
+            <button
+              type="button"
+              (click)="loadDepartamentos(departamentosPage - 1)"
+              [disabled]="!canPrev(departamentosPage)"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              (click)="loadDepartamentos(departamentosPage + 1)"
+              [disabled]="!canNext(departamentosPage, departamentosTotalPages)"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+
+        <p class="muted">Pagina {{ departamentosPage + 1 }} de {{ departamentosTotalPages || 1 }}</p>
+
+        @if (loadingDepartamentos) {
+          <p>Cargando departamentos...</p>
+        } @else if (departamentos.length === 0) {
+          <p>No hay departamentos registrados.</p>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Clave</th>
+                  <th>Nombre</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of departamentos; track d.clave) {
+                  <tr>
+                    <td>{{ d.clave }}</td>
+                    <td>{{ d.nombre }}</td>
+                    <td class="inline-actions">
+                      <button type="button" class="edit-action" (click)="startEditDepartamento(d)">Editar</button>
+                      <button type="button" class="danger" (click)="deleteDepartamento(d.clave)">Eliminar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+    </section>
+  }
+</main>
