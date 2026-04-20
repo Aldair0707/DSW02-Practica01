@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  test-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias backend
+        run: ./mvnw -B -ntp dependency:resolve
+        working-directory: backend
+
+      - name: Instalar dependencias frontend
+        run: npm ci
+        working-directory: frontend
+
+      - name: Ejecutar tests backend
+        run: ./mvnw -B -ntp test
+        working-directory: backend
+
+      - name: Ejecutar tests frontend
+        run: npm test -- --watch=false
+        working-directory: frontend
