@@ -13,6 +13,20 @@ on:
 jobs:
   test-validation:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: empleados_db
+          POSTGRES_USER: empleados_user
+          POSTGRES_PASSWORD: empleados_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U empleados_user -d empleados_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout del código
@@ -47,3 +61,41 @@ jobs:
       - name: Ejecutar tests frontend
         run: npm test -- --watch=false
         working-directory: frontend
+
+      - name: Levantar backend para Cypress
+        if: github.event_name == 'push'
+        run: ./mvnw -B -ntp spring-boot:run > /tmp/backend.log 2>&1 &
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: empleados_db
+          DB_USER: empleados_user
+          DB_PASSWORD: empleados_pass
+          APP_BASIC_USER: admin
+          APP_BASIC_PASSWORD: admin123
+
+      - name: Esperar backend listo
+        if: github.event_name == 'push'
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend listo"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend no inició a tiempo"
+          cat /tmp/backend.log
+          exit 1
+
+      - name: Ejecutar Cypress en push
+        if: github.event_name == 'push'
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          install: false
+          start: npm start
+          wait-on: 'http://localhost:4200'
+          wait-on-timeout: 120
+          command: npx cypress run --spec cypress/e2e/empleado-login-smoke.cy.ts
