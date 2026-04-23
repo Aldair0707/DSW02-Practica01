@@ -13,8 +13,8 @@ on:
       - develop
 
 jobs:
-  unit-tests:
-    name: Unit tests
+  backend-tests:
+    name: Backend tests
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +28,22 @@ jobs:
           java-version: '17'
           cache: maven
 
+      - name: Instalar dependencias backend
+        run: ./mvnw -B -ntp dependency:resolve
+        working-directory: backend
+
+      - name: Ejecutar tests backend
+        run: ./mvnw -B -ntp test
+        working-directory: backend
+
+  frontend-tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,17 +51,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Instalar dependencias backend
-        run: ./mvnw -B -ntp dependency:resolve
-        working-directory: backend
-
       - name: Instalar dependencias frontend
         run: npm ci
         working-directory: frontend
-
-      - name: Ejecutar tests backend
-        run: ./mvnw -B -ntp test
-        working-directory: backend
 
       - name: Ejecutar tests frontend
         run: npm test -- --watch=false
@@ -54,7 +62,7 @@ jobs:
   cypress-e2e:
     name: Cypress e2e (push)
     if: github.event_name == 'push'
-    needs: unit-tests
+    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     services:
       postgres:
