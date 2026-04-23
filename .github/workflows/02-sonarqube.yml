@@ -13,7 +13,7 @@ jobs:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request' &&
-      contains(join(github.event.workflow_run.pull_requests.*.base.ref, ','), 'master')
+      github.event.workflow_run.pull_requests[0].base.ref == 'master'
 
     steps:
       - name: Checkout code
@@ -29,13 +29,12 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Build backend
+      - name: SonarQube scan (Maven)
         working-directory: backend
-        run: ./mvnw -B -ntp -DskipTests verify
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
-        with:
-          projectBaseDir: backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./mvnw -B -ntp -DskipTests verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.token="$SONAR_TOKEN" \
+            -Dsonar.projectKey="Aldair0707_DSW02-Practica01" \
+            -Dsonar.organization="aldair0707"
