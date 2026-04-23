@@ -29,13 +29,10 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Build backend
+      - name: SonarQube scan (Maven)
         working-directory: backend
-        run: ./mvnw -B -ntp -DskipTests verify
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
-        with:
-          projectBaseDir: backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./mvnw -B -ntp -DskipTests verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.token="$SONAR_TOKEN"
