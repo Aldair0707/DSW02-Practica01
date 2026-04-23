@@ -89,13 +89,28 @@ jobs:
           cat /tmp/backend.log
           exit 1
 
+      - name: Crear proxy de frontend para CI
+        if: github.event_name == 'push'
+        run: |
+          cat > proxy.ci.conf.json << 'EOF'
+          {
+            "/api": {
+              "target": "http://localhost:8080",
+              "secure": false,
+              "changeOrigin": true,
+              "logLevel": "debug"
+            }
+          }
+          EOF
+        working-directory: frontend
+
       - name: Ejecutar Cypress en push
         if: github.event_name == 'push'
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
           install: false
-          start: npm start
+          start: npm run start -- --proxy-config proxy.ci.conf.json
           wait-on: 'http://localhost:4200'
           wait-on-timeout: 120
           command: npx cypress run --spec cypress/e2e/empleado-login-smoke.cy.ts
