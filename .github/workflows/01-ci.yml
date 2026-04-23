@@ -39,31 +39,6 @@ jobs:
   frontend-tests:
     name: Frontend tests
     runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Instalar dependencias frontend
-        run: npm ci
-        working-directory: frontend
-
-      - name: Ejecutar tests frontend
-        run: npm test -- --watch=false
-        working-directory: frontend
-
-  cypress-e2e:
-    name: Cypress e2e (push)
-    if: github.event_name == 'push'
-    needs: [backend-tests, frontend-tests]
-    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16-alpine
@@ -84,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar Java 17
+        if: github.event_name == 'push'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -101,7 +77,12 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Ejecutar tests frontend
+        run: npm test -- --watch=false
+        working-directory: frontend
+
       - name: Levantar backend para Cypress
+        if: github.event_name == 'push'
         run: ./mvnw -B -ntp spring-boot:run > /tmp/backend.log 2>&1 &
         working-directory: backend
         env:
@@ -114,6 +95,7 @@ jobs:
           APP_BASIC_PASSWORD: admin123
 
       - name: Esperar backend listo
+        if: github.event_name == 'push'
         run: |
           for i in {1..60}; do
             if curl -fsS http://localhost:8080/actuator/health > /dev/null; then
@@ -127,6 +109,7 @@ jobs:
           exit 1
 
       - name: Crear proxy de frontend para CI
+        if: github.event_name == 'push'
         run: |
           cat > proxy.ci.conf.json << 'EOF'
           {
@@ -141,6 +124,7 @@ jobs:
         working-directory: frontend
 
       - name: Ejecutar Cypress en push
+        if: github.event_name == 'push'
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
