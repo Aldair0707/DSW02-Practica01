@@ -6,12 +6,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 
 @SpringBootTest
@@ -20,6 +23,9 @@ class SecurityIntegrationTest extends PostgresIntegrationBase {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void shouldRequireAuthenticationOnBusinessEndpoints() throws Exception {
@@ -77,17 +83,17 @@ class SecurityIntegrationTest extends PostgresIntegrationBase {
 
     @Test
     void shouldNotExposeUnversionedListEndpoints() throws Exception {
-        mockMvc.perform(get("/empleados")
-                .with(httpBasic("admin", "admin123")))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/empleados"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("AUTH_INVALIDA"));
 
-        mockMvc.perform(get("/departamentos")
-                .with(httpBasic("admin", "admin123")))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/departamentos"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("AUTH_INVALIDA"));
 
-        mockMvc.perform(get("/departamentos/DEP-0000/empleados")
-                .with(httpBasic("admin", "admin123")))
-            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/departamentos/DEP-0000/empleados"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("AUTH_INVALIDA"));
     }
 
     @Test
@@ -178,11 +184,15 @@ class SecurityIntegrationTest extends PostgresIntegrationBase {
             }
             """;
 
-        mockMvc.perform(post("/api/v1/empleados")
+        MvcResult createResult = mockMvc.perform(post("/api/v1/empleados")
                 .with(httpBasic("admin", "admin123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createPayload))
-            .andExpect(status().isCreated());
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        JsonNode createdEmpleado = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        String createdClave = createdEmpleado.get("clave").asText();
 
         mockMvc.perform(get("/api/v1/empleados/auth/me")
                 .with(httpBasic("empleado.error@empresa.com", "PasswordIncorrecta")))
@@ -190,7 +200,7 @@ class SecurityIntegrationTest extends PostgresIntegrationBase {
             .andExpect(jsonPath("$.code").value("AUTH_INVALIDA"))
             .andExpect(jsonPath("$.message").value("Credenciales invalidas"));
 
-        mockMvc.perform(patch("/api/v1/empleados/EMP-1001/estado")
+        mockMvc.perform(patch("/api/v1/empleados/{clave}/estado", createdClave)
                 .with(httpBasic("admin", "admin123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

@@ -114,7 +114,13 @@
         Cerrar sesion
       </button>
     } @else {
-      <form [formGroup]="loginForm" (ngSubmit)="login()" class="form-grid" data-cy="empleado-login-form">
+      <form
+        [formGroup]="loginForm"
+        (ngSubmit)="login()"
+        class="form-grid"
+        data-cy="empleado-login-form"
+        novalidate
+      >
         <label>
           Correo
           <input

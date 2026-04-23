@@ -25,7 +25,7 @@ describe('Empleados Smoke - Crear y listar', () => {
     cy.get('[data-cy="empleados-list-title"]').should('contain.text', 'Empleados');
 
     cy.get('[data-cy="empleados-section"]').within(() => {
-      cy.get('input[formcontrolname="nombre"]').clear().type(`Smoke User ${unique}`);
+      cy.get('input[formcontrolname="nombre"]').clear().type('Smoke User');
       cy.get('input[formcontrolname="direccion"]').clear().type('Direccion Smoke 123');
       cy.get('input[formcontrolname="telefono"]').clear().type('5551234');
       cy.get('input[formcontrolname="correo"]').clear().type(correo);

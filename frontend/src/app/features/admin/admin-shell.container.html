@@ -22,7 +22,7 @@
       <h2>Iniciar sesión</h2>
       <p>Solo el usuario admin puede acceder a esta pantalla.</p>
 
-      <form [formGroup]="authForm" (ngSubmit)="login()" class="form-grid" data-cy="login-form">
+      <form [formGroup]="authForm" (ngSubmit)="login()" class="form-grid" data-cy="login-form" novalidate>
         <label>
           Usuario
           <input
@@ -109,7 +109,7 @@
           }
         </h3>
 
-        <form [formGroup]="empleadoForm" (ngSubmit)="submitEmpleado()" class="form-grid">
+        <form [formGroup]="empleadoForm" (ngSubmit)="submitEmpleado()" class="form-grid" novalidate>
           <label>
             Nombre
             <input type="text" formControlName="nombre" />
@@ -238,7 +238,7 @@
           }
         </h3>
 
-        <form [formGroup]="departamentoForm" (ngSubmit)="submitDepartamento()" class="form-grid">
+        <form [formGroup]="departamentoForm" (ngSubmit)="submitDepartamento()" class="form-grid" novalidate>
           <label>
             Nombre
             <input type="text" formControlName="nombre" />
