@@ -131,12 +131,26 @@ jobs:
           cat /tmp/backend.log
           exit 1
 
+      - name: Create proxy for CI
+        working-directory: frontend
+        run: |
+          cat > proxy.ci.conf.json << 'EOF'
+          {
+            "/api": {
+              "target": "http://localhost:8080",
+              "secure": false,
+              "changeOrigin": true,
+              "logLevel": "debug"
+            }
+          }
+          EOF
+
       - name: Run Cypress smoke test
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
           install-command: npm ci
-          start: npm run start -- --host 0.0.0.0 --port 4200
+          start: npm run start -- --host 0.0.0.0 --port 4200 --proxy-config proxy.ci.conf.json
           wait-on: http://localhost:4200
           wait-on-timeout: 120
           browser: chrome

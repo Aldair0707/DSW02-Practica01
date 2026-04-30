@@ -1,16 +1,22 @@
 name: 02 Sonar Analysis
 
 on:
-  push:
-    branches:
-      - master
-      - develop
+  workflow_run:
+    workflows:
+      - 01 CI Tests
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
   sonar-analysis:
     name: Sonar Analysis
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0].base.ref == 'master')
     env:
       SONAR_HOST_URL: https://sonarcloud.io
       SONAR_PROJECT_KEY: Just-Yes-Man_dsw-01
@@ -20,6 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
 
       - name: Setup Java
