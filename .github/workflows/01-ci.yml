@@ -1,12 +1,14 @@
-name: CI
-run-name: CI • ${{ github.event_name }} • ${{ github.ref_name }} • @${{ github.actor }}
+name: 01 CI Tests
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - master
       - develop
+    paths:
+      - frontend/**
+      - backend/**
+      - .github/workflows/01-ci.yml
   pull_request:
     branches:
       - master
@@ -14,30 +16,61 @@ on:
 
 jobs:
   backend-tests:
-    name: Backend tests
+    name: Backend Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
-      - name: Checkout del código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
-      - name: Instalar dependencias backend
-        run: ./mvnw -B -ntp dependency:resolve
-        working-directory: backend
-
-      - name: Ejecutar tests backend
+      - name: Run backend tests
         run: ./mvnw -B -ntp test
-        working-directory: backend
 
   frontend-tests:
-    name: Frontend tests
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Setup Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Run frontend tests
+        env:
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: npm test -- --watch=false
+
+  cypress-smoke:
+    name: Cypress Smoke Test
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -55,36 +88,27 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: Checkout del código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar Java 17
-        if: github.event_name == 'push'
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
-      - name: Configurar Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Instalar dependencias frontend
-        run: npm ci
-        working-directory: frontend
-
-      - name: Ejecutar tests frontend
-        run: npm test -- --watch=false
-        working-directory: frontend
-
-      - name: Levantar backend para Cypress
-        if: github.event_name == 'push'
-        run: ./mvnw -B -ntp spring-boot:run > /tmp/backend.log 2>&1 &
+      - name: Start backend
         working-directory: backend
+        run: ./mvnw -B -ntp spring-boot:run > /tmp/backend.log 2>&1 &
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -94,22 +118,21 @@ jobs:
           APP_BASIC_USER: admin
           APP_BASIC_PASSWORD: admin123
 
-      - name: Esperar backend listo
-        if: github.event_name == 'push'
+      - name: Wait backend ready
         run: |
           for i in {1..60}; do
             if curl -fsS http://localhost:8080/actuator/health > /dev/null; then
-              echo "Backend listo"
+              echo "Backend ready"
               exit 0
             fi
             sleep 2
           done
-          echo "Backend no inició a tiempo"
+          echo "Backend did not start in time"
           cat /tmp/backend.log
           exit 1
 
-      - name: Crear proxy de frontend para CI
-        if: github.event_name == 'push'
+      - name: Create proxy for CI
+        working-directory: frontend
         run: |
           cat > proxy.ci.conf.json << 'EOF'
           {
@@ -121,15 +144,16 @@ jobs:
             }
           }
           EOF
-        working-directory: frontend
 
-      - name: Ejecutar Cypress en push
-        if: github.event_name == 'push'
+      - name: Run Cypress smoke test
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
-          install: false
-          start: npm run start -- --proxy-config proxy.ci.conf.json
-          wait-on: 'http://localhost:4200'
+          install-command: npm ci
+          start: npm run start -- --host 0.0.0.0 --port 4200 --proxy-config proxy.ci.conf.json
+          wait-on: http://localhost:4200
           wait-on-timeout: 120
-          command: npx cypress run --spec cypress/e2e/empleado-login-smoke.cy.ts
+          browser: chrome
+          spec: cypress/e2e/empleado-login-smoke.cy.ts
+        env:
+          CYPRESS_BASE_URL: http://localhost:4200

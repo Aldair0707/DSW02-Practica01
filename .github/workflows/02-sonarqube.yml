@@ -1,40 +1,59 @@
-name: SonarQube
-run-name: SonarQube • PR->master • @${{ github.actor }}
+name: 02 Sonar Analysis
 
 on:
   workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+    workflows:
+      - 01 CI Tests
+    types:
+      - completed
+  workflow_dispatch:
 
 jobs:
-  sonarqube-analysis:
-    name: SonarQube analysis
+  sonar-analysis:
+    name: Sonar Analysis
     runs-on: ubuntu-latest
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.pull_requests[0].base.ref == 'master'
+      github.event.workflow_run.pull_requests[0].base.ref == 'master')
+    env:
+      SONAR_HOST_URL: https://sonarcloud.io
+      SONAR_PROJECT_KEY: Just-Yes-Man_dsw-01
+      SONAR_ORGANIZATION: just-yes-man
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
 
-      - name: Set up Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
 
-      - name: SonarQube scan (Maven)
-        working-directory: backend
+      - name: Build and run Sonar analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./mvnw -B -ntp -DskipTests verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.token="$SONAR_TOKEN" \
-            -Dsonar.projectKey="Aldair0707_DSW02-Practica01" \
-            -Dsonar.organization="aldair0707"
+          set -euo pipefail
+
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "::error::Falta el secret SONAR_TOKEN en GitHub."
+            exit 1
+          fi
+
+          echo "Using sonar.projectKey=${SONAR_PROJECT_KEY}"
+          echo "Using sonar.organization=${SONAR_ORGANIZATION}"
+
+          mvn -B verify jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+            -Dsonar.organization="${SONAR_ORGANIZATION}" \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=300
