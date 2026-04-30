@@ -39,6 +39,7 @@ jobs:
       - name: Build and run Sonar analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        working-directory: backend
         run: |
           set -euo pipefail
 
@@ -50,7 +51,7 @@ jobs:
           echo "Using sonar.projectKey=${SONAR_PROJECT_KEY}"
           echo "Using sonar.organization=${SONAR_ORGANIZATION}"
 
-          mvn -B verify jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          ./mvnw -B -ntp verify jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url="${SONAR_HOST_URL}" \
             -Dsonar.token="${SONAR_TOKEN}" \
             -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \

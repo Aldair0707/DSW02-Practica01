@@ -21,11 +21,11 @@ jobs:
           - service: backend
             image_name: empleados-backend
             context: ./backend
-            dockerfile: Dockerfile
+            dockerfile: ./backend/Dockerfile
           - service: frontend
             image_name: empleados-frontend
             context: ./frontend
-            dockerfile: Dockerfile
+            dockerfile: ./frontend/Dockerfile
 
     steps:
       - name: Checkout
@@ -54,11 +54,19 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Validate frontend nginx config
+        if: matrix.service == 'frontend'
+        run: |
+          if [ ! -f frontend/nginx/default.conf ]; then
+            echo "::error::Missing frontend/nginx/default.conf"
+            exit 1
+          fi
+
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ secrets.DOCKER_USER }}/${{ matrix.image_name }}:latest
