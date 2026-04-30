@@ -19,8 +19,8 @@ jobs:
       github.event.workflow_run.pull_requests[0].base.ref == 'master')
     env:
       SONAR_HOST_URL: https://sonarcloud.io
-      SONAR_PROJECT_KEY: Just-Yes-Man_dsw-01
-      SONAR_ORGANIZATION: just-yes-man
+      SONAR_PROJECT_KEY: Aldair0707_DSW02-Practica01
+      SONAR_ORGANIZATION: aldair0707
 
     steps:
       - name: Checkout
@@ -50,7 +50,7 @@ jobs:
           echo "Using sonar.projectKey=${SONAR_PROJECT_KEY}"
           echo "Using sonar.organization=${SONAR_ORGANIZATION}"
 
-          ./backend/mvnw -B -ntp -f backend/pom.xml verify jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          ./backend/mvnw -B -ntp -f backend/pom.xml verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url="${SONAR_HOST_URL}" \
             -Dsonar.token="${SONAR_TOKEN}" \
             -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
