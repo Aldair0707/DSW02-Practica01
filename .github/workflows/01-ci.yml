@@ -6,10 +6,6 @@ on:
     branches:
       - master
       - develop
-    paths:
-      - frontend/**
-      - backend/**
-      - .github/workflows/01-ci.yml
   pull_request:
     branches:
       - master

@@ -1,5 +1,4 @@
 name: 02 Sonar Analysis
-run-name: Sonar Analysis • ${{ github.event_name }} • ${{ github.ref_name }} • @${{ github.actor }}
 
 on:
   workflow_run:
