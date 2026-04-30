@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class ClaveParser {
 
     public static final String PREFIJO = "EMP-";
-    private static final Pattern CLAVE_PATTERN = Pattern.compile("^EMP-([0-9]+)$");
+    private static final Pattern CLAVE_PATTERN = Pattern.compile("^EMP-(\\d+)$");
 
     public long parseConsecutivo(String clave) {
         if (clave == null || clave.isBlank()) {

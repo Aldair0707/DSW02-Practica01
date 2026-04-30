@@ -61,16 +61,15 @@ public class CrearEmpleadoService {
             throw new BusinessException(ErrorCode.VALIDACION, "El correo ya esta registrado");
         }
 
-        EmpleadoEntity entity = new EmpleadoEntity(
-            id,
-            request.getNombre(),
-            request.getDireccion(),
-            request.getTelefono(),
-            correoNormalizado,
-            passwordEncoder.encode(request.getContrasena()),
-            true,
-            departamentoClave
-        );
+        EmpleadoEntity entity = new EmpleadoEntity();
+        entity.setId(id);
+        entity.setNombre(request.getNombre());
+        entity.setDireccion(request.getDireccion());
+        entity.setTelefono(request.getTelefono());
+        entity.setCorreo(correoNormalizado);
+        entity.setPasswordHash(passwordEncoder.encode(request.getContrasena()));
+        entity.setActivo(true);
+        entity.setDepartamentoClave(departamentoClave);
         EmpleadoEntity saved = empleadoRepository.save(entity);
 
         return new Empleado(

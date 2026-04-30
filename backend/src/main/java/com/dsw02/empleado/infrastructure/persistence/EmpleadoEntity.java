@@ -34,30 +34,15 @@ public class EmpleadoEntity {
     private String departamentoClave;
 
     public EmpleadoEntity() {
-    }
-
-    public EmpleadoEntity(
-        EmpleadoId id,
-        String nombre,
-        String direccion,
-        String telefono,
-        String correo,
-        String passwordHash,
-        boolean activo,
-        String departamentoClave
-    ) {
-        this.id = id;
-        this.nombre = nombre;
-        this.direccion = direccion;
-        this.telefono = telefono;
-        this.correo = correo;
-        this.passwordHash = passwordHash;
-        this.activo = activo;
-        this.departamentoClave = departamentoClave;
+        // JPA requires a no-arg constructor.
     }
 
     public EmpleadoId getId() {
         return id;
+    }
+
+    public void setId(EmpleadoId id) {
+        this.id = id;
     }
 
     public String getNombre() {
