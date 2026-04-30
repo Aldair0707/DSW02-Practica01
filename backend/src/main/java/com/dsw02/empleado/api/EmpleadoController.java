@@ -44,7 +44,8 @@ public class EmpleadoController {
     private final EliminarEmpleadoService eliminarEmpleadoService;
     private final AsignarDepartamentoEmpleadoService asignarDepartamentoEmpleadoService;
     private final ObtenerPerfilAutenticadoService obtenerPerfilAutenticadoService;
-    private final String adminBasicUser;
+    @Value("${APP_BASIC_USER:admin}")
+    private String adminBasicUser;
 
     public EmpleadoController(
         CrearEmpleadoService crearEmpleadoService,
@@ -53,8 +54,7 @@ public class EmpleadoController {
         ActualizarEmpleadoService actualizarEmpleadoService,
         EliminarEmpleadoService eliminarEmpleadoService,
         AsignarDepartamentoEmpleadoService asignarDepartamentoEmpleadoService,
-        ObtenerPerfilAutenticadoService obtenerPerfilAutenticadoService,
-        @Value("${APP_BASIC_USER:admin}") String adminBasicUser
+        ObtenerPerfilAutenticadoService obtenerPerfilAutenticadoService
     ) {
         this.crearEmpleadoService = crearEmpleadoService;
         this.obtenerEmpleadoService = obtenerEmpleadoService;
@@ -63,7 +63,6 @@ public class EmpleadoController {
         this.eliminarEmpleadoService = eliminarEmpleadoService;
         this.asignarDepartamentoEmpleadoService = asignarDepartamentoEmpleadoService;
         this.obtenerPerfilAutenticadoService = obtenerPerfilAutenticadoService;
-        this.adminBasicUser = adminBasicUser;
     }
 
     @PostMapping

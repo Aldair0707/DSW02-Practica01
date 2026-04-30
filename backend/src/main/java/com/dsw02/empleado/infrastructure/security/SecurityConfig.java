@@ -27,6 +27,9 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_EMPLEADO = "EMPLEADO";
+
     private final ObjectMapper objectMapper;
     private final EmpleadoRepository empleadoRepository;
     private final CorreoNormalizer correoNormalizer;
@@ -51,12 +54,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/empleados/auth/me").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/v1/empleados").hasAnyRole("ADMIN", "EMPLEADO")
-                .requestMatchers(HttpMethod.GET, "/api/v1/departamentos").hasAnyRole("ADMIN", "EMPLEADO")
-                .requestMatchers("/api/v1/empleados/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/departamentos/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/empleados/*/estado").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/empleados/*/departamento").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/empleados").hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                .requestMatchers(HttpMethod.GET, "/api/v1/departamentos").hasAnyRole(ROLE_ADMIN, ROLE_EMPLEADO)
+                .requestMatchers("/api/v1/empleados/**").hasRole(ROLE_ADMIN)
+                .requestMatchers("/api/v1/departamentos/**").hasRole(ROLE_ADMIN)
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/empleados/*/estado").hasRole(ROLE_ADMIN)
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/empleados/*/departamento").hasRole(ROLE_ADMIN)
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
@@ -79,7 +82,7 @@ public class SecurityConfig {
             if (username.equals(userInput)) {
                 return User.withUsername(username)
                     .password(passwordEncoder.encode(password))
-                    .roles("ADMIN")
+                    .roles(ROLE_ADMIN)
                     .build();
             }
 
@@ -89,7 +92,7 @@ public class SecurityConfig {
 
             return User.withUsername(empleado.getCorreo())
                 .password(empleado.getPasswordHash())
-                .roles("EMPLEADO")
+                .roles(ROLE_EMPLEADO)
                 .disabled(!empleado.isActivo())
                 .build();
         };
