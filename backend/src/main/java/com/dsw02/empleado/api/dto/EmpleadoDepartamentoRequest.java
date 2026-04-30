@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 public class EmpleadoDepartamentoRequest {
 
     @NotBlank
-    @Pattern(regexp = "^DEP-[0-9]{4}$")
+    @Pattern(regexp = "^DEP-\\d{4}$")
     private String departamentoClave;
 
     public String getDepartamentoClave() {

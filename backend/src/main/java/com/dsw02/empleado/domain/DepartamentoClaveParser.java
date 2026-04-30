@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class DepartamentoClaveParser {
 
     public static final String PREFIJO = "DEP-";
-    private static final Pattern CLAVE_PATTERN = Pattern.compile("^DEP-([0-9]{4})$");
+    private static final Pattern CLAVE_PATTERN = Pattern.compile("^DEP-(\\d{4})$");
 
     public long parseConsecutivo(String clave) {
         if (clave == null || clave.isBlank()) {

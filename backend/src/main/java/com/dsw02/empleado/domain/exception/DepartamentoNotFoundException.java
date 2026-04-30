@@ -1,8 +1,10 @@
 package com.dsw02.empleado.domain.exception;
 
-public class DepartamentoNotFoundException extends NotFoundException {
+import com.dsw02.empleado.domain.ErrorCode;
+
+public class DepartamentoNotFoundException extends BusinessException {
 
     public DepartamentoNotFoundException(String message) {
-        super(message);
+        super(ErrorCode.NO_ENCONTRADO, message);
     }
 }
