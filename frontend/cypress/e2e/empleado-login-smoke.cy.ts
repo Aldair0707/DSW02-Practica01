@@ -68,7 +68,6 @@ describe('Empleado login smoke', () => {
   it('shows generic error for invalid password', () => {
     const unique = Date.now();
     const correo = `empleado.smoke.invalid.${unique}@empresa.com`;
-    const contrasena = 'SmokePass123';
 
     cy.intercept('GET', '**/api/v1/empleados/auth/me', {
       statusCode: 401,

@@ -1,11 +1,6 @@
 name: 02 Cypress Tests
 
 on:
-  workflow_run:
-    workflows:
-      - 01 CI Tests
-    types:
-      - completed
   pull_request:
     branches:
       - 'master'
@@ -14,19 +9,12 @@ on:
 jobs:
   cypress-smoke:
     name: Cypress Smoke Test
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout triggered commit
-        if: github.event_name == 'workflow_run'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          persist-credentials: false
-
-      - name: Checkout default branch
-        if: github.event_name == 'workflow_dispatch'
+      - name: Checkout
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         uses: actions/checkout@v4
 
       - name: Setup Node

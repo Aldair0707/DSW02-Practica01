@@ -1,11 +1,9 @@
 name: 03 Sonar Analysis
 
 on:
-  workflow_run:
-    workflows:
-      - 02 Cypress Tests
-    types:
-      - completed
+  pull_request:
+    branches:
+      - 'master'
   workflow_dispatch:
 
 jobs:
