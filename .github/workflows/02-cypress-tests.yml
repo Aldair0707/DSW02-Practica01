@@ -1,30 +1,72 @@
 name: 02 Cypress Tests
 
 on:
-  workflow_run:
-    workflows:
-      - 01 CI Tests
-    types:
-      - completed
+  pull_request:
+    branches:
+      - 'master'
   workflow_dispatch:
 
 jobs:
   cypress-smoke:
     name: Cypress Smoke Test
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: empleados_db
+          POSTGRES_USER: empleados_user
+          POSTGRES_PASSWORD: empleados_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U empleados_user -d empleados_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
-      - name: Checkout triggered commit
-        if: github.event_name == 'workflow_run'
+      - name: Checkout
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          persist-credentials: false
 
-      - name: Checkout default branch
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Start backend
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: empleados_db
+          DB_USER: empleados_user
+          DB_PASSWORD: empleados_pass
+          APP_BASIC_USER: admin
+          APP_BASIC_PASSWORD: admin123
+        run: |
+          set -euo pipefail
+          nohup mvn -B -DskipTests spring-boot:run > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
+
+      - name: Wait for backend
+        run: |
+          set -euo pipefail
+          for i in {1..45}; do
+            if (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1; then
+              echo "Backend is up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not start in time."
+          echo "Backend logs:"
+          tail -n 200 /tmp/backend.log || true
+          exit 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -45,3 +87,9 @@ jobs:
           spec: cypress/e2e/empleado-login-smoke.cy.ts
         env:
           CYPRESS_BASE_URL: http://localhost:4200
+
+      - name: Dump backend logs on failure
+        if: failure()
+        run: |
+          echo "Backend logs:"
+          tail -n 300 /tmp/backend.log || true

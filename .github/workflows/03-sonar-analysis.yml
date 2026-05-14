@@ -16,7 +16,9 @@ jobs:
       SONAR_HOST_URL: https://sonarcloud.io
       SONAR_PROJECT_KEY: Aldair0707_DSW02-Practica01
       SONAR_ORGANIZATION: aldair0707
-
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
