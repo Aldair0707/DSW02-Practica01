@@ -4,22 +4,33 @@ describe('Empleado login smoke', () => {
     const correo = `empleado.smoke.${unique}@empresa.com`;
     const contrasena = 'SmokePass123';
 
-    cy.request({
-      method: 'POST',
-      url: '/api/v1/empleados',
-      auth: { username: 'admin', password: 'admin123' },
+    cy.intercept('GET', '**/api/v1/empleados/auth/me', {
+      statusCode: 200,
       body: {
-        nombre: `Empleado Smoke ${unique}`,
-        direccion: 'Calle Smoke 1',
-        telefono: '5558889999',
-        correo,
-        contrasena,
+        actorType: 'EMPLEADO',
+        permissions: ['SELF'],
       },
-    });
-
-    cy.intercept('GET', '**/api/v1/empleados/auth/me').as('authMe');
-    cy.intercept('GET', '**/api/v1/empleados?page=*&size=*').as('listEmpleados');
-    cy.intercept('GET', '**/api/v1/departamentos?page=*&size=*').as('listDepartamentos');
+    }).as('authMe');
+    cy.intercept('GET', '**/api/v1/empleados?page=*&size=*', {
+      statusCode: 200,
+      body: {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+      },
+    }).as('listEmpleados');
+    cy.intercept('GET', '**/api/v1/departamentos?page=*&size=*', {
+      statusCode: 200,
+      body: {
+        content: [],
+        totalElements: 0,
+        totalPages: 0,
+        size: 10,
+        number: 0,
+      },
+    }).as('listDepartamentos');
 
     cy.visit('/empleado/login');
 
@@ -59,18 +70,12 @@ describe('Empleado login smoke', () => {
     const correo = `empleado.smoke.invalid.${unique}@empresa.com`;
     const contrasena = 'SmokePass123';
 
-    cy.request({
-      method: 'POST',
-      url: '/api/v1/empleados',
-      auth: { username: 'admin', password: 'admin123' },
+    cy.intercept('GET', '**/api/v1/empleados/auth/me', {
+      statusCode: 401,
       body: {
-        nombre: `Empleado Smoke Invalid ${unique}`,
-        direccion: 'Calle Smoke 2',
-        telefono: '5557771111',
-        correo,
-        contrasena,
+        message: 'Credenciales invalidas',
       },
-    });
+    }).as('authMe');
 
     cy.visit('/empleado/login');
 
@@ -86,27 +91,12 @@ describe('Empleado login smoke', () => {
     const correo = `empleado.smoke.inactivo.${unique}@empresa.com`;
     const contrasena = 'SmokePass123';
 
-    cy.request({
-      method: 'POST',
-      url: '/api/v1/empleados',
-      auth: { username: 'admin', password: 'admin123' },
+    cy.intercept('GET', '**/api/v1/empleados/auth/me', {
+      statusCode: 401,
       body: {
-        nombre: `Empleado Smoke Inactivo ${unique}`,
-        direccion: 'Calle Smoke 3',
-        telefono: '5556662222',
-        correo,
-        contrasena,
+        message: 'Credenciales invalidas',
       },
-    }).then((createRes) => {
-      const clave = createRes.body?.clave as string;
-
-      cy.request({
-        method: 'PATCH',
-        url: `/api/v1/empleados/${clave}/estado`,
-        auth: { username: 'admin', password: 'admin123' },
-        body: { activo: false },
-      });
-    });
+    }).as('authMe');
 
     cy.visit('/empleado/login');
 
