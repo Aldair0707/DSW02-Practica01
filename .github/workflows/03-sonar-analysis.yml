@@ -1,0 +1,52 @@
+name: 03 Sonar Analysis
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
+  workflow_dispatch:
+
+jobs:
+  sonar-analysis:
+    name: Sonar Analysis
+    runs-on: ubuntu-latest
+    env:
+      SONAR_HOST_URL: https://sonarcloud.io
+      SONAR_PROJECT_KEY: Aldair0707_DSW02-Practica01
+      SONAR_ORGANIZATION: aldair0707
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build and run Sonar analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "::error::Falta el secret SONAR_TOKEN en GitHub."
+            exit 1
+          fi
+
+          echo "Using sonar.projectKey=${SONAR_PROJECT_KEY}"
+          echo "Using sonar.organization=${SONAR_ORGANIZATION}"
+
+          mvn -B verify jacoco:report org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+            -Dsonar.organization="${SONAR_ORGANIZATION}" \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=300

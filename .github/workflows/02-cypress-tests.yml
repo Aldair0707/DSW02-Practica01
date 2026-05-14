@@ -1,0 +1,47 @@
+name: 02 Cypress Tests
+
+on:
+  workflow_run:
+    workflows:
+      - 01 CI Tests
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  cypress-smoke:
+    name: Cypress Smoke Test
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout triggered commit
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Checkout default branch
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Run Cypress smoke test
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          install-command: npm ci
+          start: npm run start -- --host 0.0.0.0 --port 4200
+          wait-on: 'http://localhost:4200'
+          wait-on-timeout: 120
+          browser: chrome
+          spec: cypress/e2e/empleado-login-smoke.cy.ts
+        env:
+          CYPRESS_BASE_URL: http://localhost:4200
