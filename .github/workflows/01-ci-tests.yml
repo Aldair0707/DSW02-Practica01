@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - 'develop'
-      - 'master'
     paths:
       - 'frontend/**'
       - 'backend/**'
       - '.github/workflows/01-ci-tests.yml'
+  pull_request:
+    branches:
+      - 'master'
 
 jobs:
   backend-tests:
