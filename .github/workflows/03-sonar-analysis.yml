@@ -13,10 +13,10 @@ jobs:
     name: Sonar Analysis
     runs-on: ubuntu-latest
     env:
-      SONAR_HOST_URL: https://sonarcloud.io
-      SONAR_PROJECT_KEY: Aldair0707_DSW02-Practica01
-      SONAR_ORGANIZATION: aldair0707
-
+      pull_request:
+        branches:
+          - 'master'
+          - 'main'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
