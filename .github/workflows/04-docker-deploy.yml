@@ -1,10 +1,9 @@
 name: 04 Docker Deploy
-run-name: Docker Deploy • ${{ github.event_name }} • ${{ github.ref_name }} • @${{ github.actor }}
 
 on:
   workflow_run:
     workflows:
-      - 03 Cypress
+      - 03 Sonar Analysis
     types:
       - completed
   workflow_dispatch:
@@ -13,7 +12,7 @@ jobs:
   docker-build-and-push:
     name: Build and Push ${{ matrix.service }} image
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    if: github.event.workflow_run.conclusion == 'success'
 
     strategy:
       fail-fast: false
@@ -22,17 +21,17 @@ jobs:
           - service: backend
             image_name: empleados-backend
             context: ./backend
-            dockerfile: ./backend/Dockerfile
+            dockerfile: Dockerfile
           - service: frontend
             image_name: empleados-frontend
             context: ./frontend
-            dockerfile: ./frontend/Dockerfile
+            dockerfile: Dockerfile
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
 
       - name: Validate Docker Hub credentials
         env:
@@ -55,20 +54,12 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Validate frontend nginx config
-        if: matrix.service == 'frontend'
-        run: |
-          if [ ! -f frontend/nginx/default.conf ]; then
-            echo "::error::Missing frontend/nginx/default.conf"
-            exit 1
-          fi
-
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ secrets.DOCKER_USER }}/${{ matrix.image_name }}:latest
-            ${{ secrets.DOCKER_USER }}/${{ matrix.image_name }}:${{ github.event.workflow_run.head_sha || github.sha }}
+            ${{ secrets.DOCKER_USER }}/${{ matrix.image_name }}:${{ github.sha }}

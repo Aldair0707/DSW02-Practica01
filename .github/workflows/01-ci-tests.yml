@@ -1,23 +1,24 @@
 name: 01 CI Tests
-run-name: CI • ${{ github.event_name }} • ${{ github.ref_name }} • @${{ github.actor }}
 
 on:
   push:
     branches:
-      - master
-      - develop
+      - 'master'
+      - 'develop'
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/01-ci-tests.yml'
   pull_request:
     branches:
-      - master
-      - develop
-
-permissions:
-  contents: read
+      - 'master'
+      - 'develop'
 
 jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: backend
@@ -32,10 +33,9 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-          cache-dependency-path: backend/pom.xml
 
       - name: Run backend tests
-        run: ./mvnw -B -ntp test
+        run: mvn -B test
 
   frontend-tests:
     name: Frontend Tests
@@ -66,5 +66,4 @@ jobs:
       - name: Run frontend tests
         env:
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: npm test -- --watch=false
-
+        run: npm test -- --watch=false --no-progress
