@@ -3,7 +3,7 @@ name: 04 Docker Deploy
 on:
   workflow_run:
     workflows:
-      - 03 Sonar Analysis
+      - 03 Cypress Tests
     types:
       - completed
   workflow_dispatch:
