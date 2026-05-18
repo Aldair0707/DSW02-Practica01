@@ -1,9 +1,9 @@
-name: 02 Cypress Tests
+name: 03 Cypress Tests
 
 on:
   workflow_run:
     workflows:
-      - 01 CI Tests
+      - 02 Sonar Analysis
     types:
       - completed
   workflow_dispatch:
